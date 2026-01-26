@@ -14,9 +14,9 @@ import { EnvironmentService } from './environment.service';
 export class App implements OnInit {
   private environmentService = inject(EnvironmentService);
   private sanitizer = inject(DomSanitizer);
-  
+
   token: string = '';
-  
+
   showPatientIframe: boolean = false;
   showStaffIframe: boolean = false;
   patientIframeUrl!: SafeResourceUrl;
@@ -30,14 +30,14 @@ export class App implements OnInit {
 
   updateIframeUrls(): void {
     const token = this.environmentService.getToken();
-    
+
     // Update patient iframe URL
     let patientUrl = this.patientUrl;
     if (token) {
       patientUrl = `${this.patientUrl}?token=${encodeURIComponent(token)}`;
     }
     this.patientIframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(patientUrl);
-    
+
     // Update staff iframe URL
     let staffUrl = this.staffUrl;
     if (token) {
@@ -48,7 +48,7 @@ export class App implements OnInit {
 
   togglePatientIframe(): void {
     this.showPatientIframe = !this.showPatientIframe;
-    
+
     // Update iframe URL and send token when iframe is shown
     if (this.showPatientIframe) {
       this.updateIframeUrls();
@@ -58,7 +58,7 @@ export class App implements OnInit {
 
   toggleStaffIframe(): void {
     this.showStaffIframe = !this.showStaffIframe;
-    
+
     // Update iframe URL and send token when iframe is shown
     if (this.showStaffIframe) {
       this.updateIframeUrls();
@@ -74,7 +74,7 @@ export class App implements OnInit {
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage(
           { type: 'AUTH_TOKEN', token: token },
-          'https://fe-react-v1.practeaz.workers.dev/'
+          'https://fe-react-v1.practeaz.workers.dev'
         );
       }
     }
@@ -84,12 +84,12 @@ export class App implements OnInit {
     if (this.token) {
       // Set the exact token entered in the environment
       this.environmentService.setToken(this.token);
-      
+
       alert(`Token set successfully!`);
-      
+
       // Update both iframe URLs with the new token
       this.updateIframeUrls();
-      
+
       // Clear form
       this.token = '';
     }

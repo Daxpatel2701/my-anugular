@@ -21,8 +21,8 @@ export class App implements OnInit {
   showStaffIframe: boolean = false;
   patientIframeUrl!: SafeResourceUrl;
   staffIframeUrl!: SafeResourceUrl;
-  patientUrl: string = 'https://fe-react-v1.practeaz.workers.dev/patient/';
-  staffUrl: string = 'https://fe-react-v1.practeaz.workers.dev/staff/';
+  patientUrl: string = 'http://localhost:3000/patient';
+  staffUrl: string = 'http://localhost:3000/staff';
 
   ngOnInit(): void {
     this.updateIframeUrls();
@@ -74,7 +74,7 @@ export class App implements OnInit {
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage(
           { type: 'AUTH_TOKEN', token: token },
-          'https://fe-react-v1.practeaz.workers.dev/'
+          'http://localhost:3000/'
         );
       }
     }

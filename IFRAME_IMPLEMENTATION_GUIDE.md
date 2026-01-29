@@ -43,8 +43,9 @@ The token can originate from various sources:
 
 In this implementation, the token is:
 - **Entered by the user** through a login form input field
-- **Stored in browser cookies** for persistence across page reloads
-- **Valid for 30 days** from the time it's set
+- **Stored in localStorage** for persistence across page reloads
+- **Available indefinitely** until explicitly cleared or removed
+- **Storage Limit**: ~5MB (much larger than 4KB cookie limit)
 
 ### 🔄 Token Flow Diagram
 
@@ -58,16 +59,16 @@ In this implementation, the token is:
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ 2. TOKEN STORAGE (EnvironmentService)                       │
-│    • setToken() stores in browser cookie                    │
-│    • Cookie name: "authToken"                               │
-│    • Expiration: 30 days                                    │
-│    • Path: "/" (available to all pages)                     │
+│    • setToken() stores in localStorage                      │
+│    • Key name: "authToken"                                  │
+│    • Persistent until removed                               │
+│    • Accessible via window.localStorage                     │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ 3. TOKEN RETRIEVAL                                          │
-│    • getToken() reads from cookie                           │
+│    • getToken() reads from localStorage                     │
 │    • Returns string or null                                 │
 └────────────────────────┬────────────────────────────────────┘
                          │
@@ -107,7 +108,7 @@ export class LoginComponent {
   onLogin(): void {
     const token = this.token; // From form input or API response
     
-    // Store token in cookie
+    // Store token in localStorage
     this.environmentService.setToken(token);
     
     console.log('Token stored successfully!');
@@ -118,7 +119,7 @@ export class LoginComponent {
 **Step 3**: Token is now automatically available to iframe components
 ```typescript
 // Token is retrieved and passed to iframe automatically
-const token = this.environmentService.getToken(); // Reads from cookie
+const token = this.environmentService.getToken(); // Reads from localStorage
 ```
 
 ### 🚀 How Token is Passed to Iframe
@@ -179,10 +180,10 @@ window.addEventListener('message', (event) => {
 ### 🔒 Token Storage Location
 
 **In Angular App (Parent Window)**:
-- **Location**: Browser Cookie
-- **Name**: `authToken`
-- **Lifetime**: 30 days
-- **Scope**: All pages in the same domain
+- **Location**: localStorage
+- **Key Name**: `authToken`
+- **Lifetime**: Until cleared
+- **Scope**: Same origin (domain + protocol)
 - **Access**: Via `EnvironmentService.getToken()`
 
 **In Iframe (Child Window)**:
@@ -196,8 +197,8 @@ window.addEventListener('message', (event) => {
 | Aspect | Details |
 |--------|--------|
 | **Token Name** | `authToken` |
-| **Storage Type** | Browser Cookie |
-| **Expiration** | 30 days |
+| **Storage Type** | localStorage |
+| **Expiration** | None (until removed) |
 | **Set Token** | `environmentService.setToken(token)` |
 | **Get Token** | `environmentService.getToken()` |
 | **Remove Token** | `environmentService.removeToken()` |
@@ -262,20 +263,13 @@ export class EnvironmentService {
   }
 
   /**
-   * Retrieves the authentication token from browser cookie
+   * Retrieves the authentication token from localStorage
    * @returns The token string if found, null otherwise
-   * Reads from cookie named: 'authToken'
+   * Reads from key named: 'authToken'
    */
   getToken(): string | null {
-    const name = this.TOKEN_KEY + "=";
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const cookieArray = decodedCookie.split(';');
-    
-    for (let i = 0; i < cookieArray.length; i++) {
-      let cookie = cookieArray[i].trim();
-      if (cookie.indexOf(name) === 0) {
-        return cookie.substring(name.length, cookie.length);
-      }
+    if (isPlatformBrowser(this.platformId)) {
+      return localStorage.getItem(this.TOKEN_KEY);
     }
     return null;
   }
@@ -393,7 +387,7 @@ export class App implements OnInit {
    * 4. Target origin must match iframe URL for security
    */
   sendTokenToIframe(type: 'patient' | 'staff'): void {
-    // Get token from cookie storage
+    // Get token from storage
     const token = this.environmentService.getToken();
     if (token) {
       const className = type === 'patient' ? '.patient-iframe' : '.staff-iframe';
@@ -402,7 +396,7 @@ export class App implements OnInit {
         iframe.contentWindow.postMessage(
           { 
             type: 'AUTH_TOKEN',  // Message identifier for iframe to recognize
-            token: token         // The actual token value from 'authToken' cookie
+            token: token         // The actual token value from 'authToken' storage
           },
           'http://localhost:3000' // Target origin - MUST match iframe URL
         );
@@ -773,7 +767,7 @@ Replace the SVG content inside the button elements with your custom icons.
 
 ### Issue: Token not received in iframe
 **Solution**:
-1. Verify token exists in cookies (check `EnvironmentService.getToken()`)
+1. Verify token exists in storage (check `EnvironmentService.getToken()`)
 2. Check browser console for errors
 3. Use browser DevTools to inspect postMessage events
 

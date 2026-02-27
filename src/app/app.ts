@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
@@ -14,6 +14,8 @@ import { EnvironmentService } from './environment.service';
 export class App implements OnInit {
   private environmentService = inject(EnvironmentService);
   private sanitizer = inject(DomSanitizer);
+  private ngZone = inject(NgZone);
+  private cdr = inject(ChangeDetectorRef);
   
   token: string = '';
   
@@ -21,12 +23,39 @@ export class App implements OnInit {
   showStaffIframe: boolean = false;
   patientIframeUrl!: SafeResourceUrl;
   staffIframeUrl!: SafeResourceUrl;
-  patientUrl: string = 'http://localhost:3000/patient';
-  staffUrl: string = 'http://localhost:3000/staff';
+  patientUrl: string = 'https://fe-react-v1.practeaz.workers.dev/patient';
+  staffUrl: string = 'https://fe-react-v1.practeaz.workers.dev/staff';
 
   ngOnInit(): void {
     this.updateIframeUrls();
+    this.setupMessageListener();
   }
+
+  setupMessageListener(): void {
+    window.addEventListener('message', (event) => {
+      // Guard against non-object messages (Next.js HMR sends strings, etc.)
+      if (!event.data || typeof event.data !== 'object') return;
+
+      if (event.data.type === 'CLOSE_PATIENT_IFRAME') {
+        console.log('Closing patient iframe');
+        this.ngZone.run(() => {
+          this.showPatientIframe = false;
+          this.cdr.detectChanges();
+        });
+      }
+
+      if (event.data.type === 'CLOSE_STAFF_IFRAME') {
+        console.log('Closing staff iframe');
+        this.ngZone.run(() => {
+          this.showStaffIframe = false;
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
+
+  // No longer needed — keeping stub so togglePatientIframe/toggleStaffIframe compile
+  setupIframeLoadListener(_type: 'patient' | 'staff'): void {}
 
   updateIframeUrls(): void {
     const token = this.environmentService.getToken();
@@ -48,21 +77,28 @@ export class App implements OnInit {
 
   togglePatientIframe(): void {
     this.showPatientIframe = !this.showPatientIframe;
+    console.log('togglePatientIframe called - new state:', this.showPatientIframe);
     
-    // Update iframe URL and send token when iframe is shown
     if (this.showPatientIframe) {
       this.updateIframeUrls();
-      setTimeout(() => this.sendTokenToIframe('patient'), 500);
+      // Wait for Angular to render the iframe element, then attach listeners
+      setTimeout(() => {
+        this.sendTokenToIframe('patient');
+        this.setupIframeLoadListener('patient');
+      }, 500);
     }
   }
 
   toggleStaffIframe(): void {
     this.showStaffIframe = !this.showStaffIframe;
+    console.log('toggleStaffIframe called - new state:', this.showStaffIframe);
     
-    // Update iframe URL and send token when iframe is shown
     if (this.showStaffIframe) {
       this.updateIframeUrls();
-      setTimeout(() => this.sendTokenToIframe('staff'), 500);
+      setTimeout(() => {
+        this.sendTokenToIframe('staff');
+        this.setupIframeLoadListener('staff');
+      }, 500);
     }
   }
 
@@ -74,7 +110,7 @@ export class App implements OnInit {
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage(
           { type: 'AUTH_TOKEN', token: token },
-          'http://localhost:3000/'
+          'https://fe-react-v1.practeaz.workers.dev/'
         );
       }
     }

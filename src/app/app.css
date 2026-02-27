@@ -136,8 +136,9 @@ form {
 .chatbox-popup {
   position: fixed;
   bottom: 90px;
-  width: 950px;
-  height: 600px;
+  width: 700px;
+  height: 900px;
+   max-height: calc(100vh - 110px);
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -206,7 +207,8 @@ form {
 @media (max-width: 768px) {
   .chatbox-popup {
     width: calc(100vw - 40px);
-    height: 70vh;
+    height: 860px;
+    max-height: calc(100vh - 110px);
     bottom: 90px;
     right: 20px;
     left: 20px;

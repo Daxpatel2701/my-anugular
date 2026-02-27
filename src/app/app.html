@@ -37,21 +37,11 @@
 
 <!-- Patient Chatbox Popup -->
 <div class="chatbox-popup patient-popup" [class.show]="showPatientIframe">
-  <button class="close-button" (click)="togglePatientIframe()">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-  </button>
   <iframe [src]="patientIframeUrl" frameborder="0" class="patient-iframe"></iframe>
 </div>
 
 <!-- Staff Chatbox Popup -->
 <div class="chatbox-popup staff-popup" [class.show]="showStaffIframe">
-  <button class="close-button" (click)="toggleStaffIframe()">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-  </button>
   <iframe [src]="staffIframeUrl" frameborder="0" class="staff-iframe"></iframe>
 </div>
 

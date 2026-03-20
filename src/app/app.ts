@@ -16,15 +16,15 @@ export class App implements OnInit {
   private sanitizer = inject(DomSanitizer);
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
-  
+
   token: string = '';
-  
+
   showPatientIframe: boolean = false;
   showStaffIframe: boolean = false;
   patientIframeUrl!: SafeResourceUrl;
   staffIframeUrl!: SafeResourceUrl;
-  patientUrl: string = 'https://fe-react-v1.practeaz.workers.dev/patient';
-  staffUrl: string = 'https://fe-react-v1.practeaz.workers.dev/staff';
+  patientUrl: string = 'http://localhost:3000/patient';
+  staffUrl: string = 'http://localhost:3000/staff';
 
   ngOnInit(): void {
     this.updateIframeUrls();
@@ -59,14 +59,14 @@ export class App implements OnInit {
 
   updateIframeUrls(): void {
     const token = this.environmentService.getToken();
-    
+
     // Update patient iframe URL
     let patientUrl = this.patientUrl;
     if (token) {
       patientUrl = `${this.patientUrl}?token=${encodeURIComponent(token)}`;
     }
     this.patientIframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(patientUrl);
-    
+
     // Update staff iframe URL
     let staffUrl = this.staffUrl;
     if (token) {
@@ -78,7 +78,7 @@ export class App implements OnInit {
   togglePatientIframe(): void {
     this.showPatientIframe = !this.showPatientIframe;
     console.log('togglePatientIframe called - new state:', this.showPatientIframe);
-    
+
     if (this.showPatientIframe) {
       this.updateIframeUrls();
       // Wait for Angular to render the iframe element, then attach listeners
@@ -92,7 +92,7 @@ export class App implements OnInit {
   toggleStaffIframe(): void {
     this.showStaffIframe = !this.showStaffIframe;
     console.log('toggleStaffIframe called - new state:', this.showStaffIframe);
-    
+
     if (this.showStaffIframe) {
       this.updateIframeUrls();
       setTimeout(() => {
@@ -110,7 +110,7 @@ export class App implements OnInit {
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage(
           { type: 'AUTH_TOKEN', token: token },
-          'https://fe-react-v1.practeaz.workers.dev/'
+          'http://localhost:3000/'
         );
       }
     }
@@ -120,12 +120,12 @@ export class App implements OnInit {
     if (this.token) {
       // Set the exact token entered in the environment
       this.environmentService.setToken(this.token);
-      
+
       alert(`Token set successfully!`);
-      
+
       // Update both iframe URLs with the new token
       this.updateIframeUrls();
-      
+
       // Clear form
       this.token = '';
     }

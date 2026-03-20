@@ -4,9 +4,9 @@
     <form (ngSubmit)="onLogin()" #loginForm="ngForm">
       <div class="form-group">
         <label for="token">Authentication Token</label>
-        <input 
-          type="text" 
-          id="token" 
+        <input
+          type="text"
+          id="token"
           name="token"
           [(ngModel)]="token"
           required
@@ -37,12 +37,12 @@
 
 <!-- Patient Chatbox Popup -->
 <div class="chatbox-popup patient-popup" [class.show]="showPatientIframe">
-  <iframe [src]="patientIframeUrl" frameborder="0" class="patient-iframe"></iframe>
+  <iframe [src]="patientIframeUrl" frameborder="0" class="patient-iframe" allow="microphone; camera; autoplay; clipboard-write"></iframe>
 </div>
 
 <!-- Staff Chatbox Popup -->
 <div class="chatbox-popup staff-popup" [class.show]="showStaffIframe">
-  <iframe [src]="staffIframeUrl" frameborder="0" class="staff-iframe"></iframe>
+  <iframe [src]="staffIframeUrl" frameborder="0" class="staff-iframe" allow="microphone; camera; autoplay; clipboard-write"></iframe>
 </div>
 
 <router-outlet />

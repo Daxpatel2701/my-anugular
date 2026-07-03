@@ -9,9 +9,17 @@ export class EnvironmentService {
   private platformId = inject(PLATFORM_ID);
 
   setToken(token: string): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(this.TOKEN_KEY, token);
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
     }
+
+    const normalizedToken = token.trim();
+    if (!normalizedToken) {
+      localStorage.removeItem(this.TOKEN_KEY);
+      return;
+    }
+
+    localStorage.setItem(this.TOKEN_KEY, normalizedToken);
   }
 
   getToken(): string | null {

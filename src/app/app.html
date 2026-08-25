@@ -34,6 +34,111 @@
         <span>{{ patient.hospitalPatientId || patient.patientId }}</span>
       </p>
     </div>
+
+    <section class="doctor-branch-card" aria-labelledby="doctor-branch-heading">
+      <div class="doctor-branch-card__header">
+        <div>
+          <p class="selected-patient-label">Workspace context</p>
+          <h2 id="doctor-branch-heading">Doctor / Branch Swap</h2>
+        </div>
+        <button
+          type="button"
+          class="context-refresh-button"
+          (click)="loadDoctorBranchContext(backendUserId)"
+          [disabled]="isContextLoading"
+        >
+          {{ isContextLoading ? 'Loading...' : 'Reload' }}
+        </button>
+      </div>
+
+      <p class="doctor-branch-help">
+        Select the branch and doctor used by this Angular workspace and the embedded staff iframe.
+      </p>
+
+      <div class="context-user-id-row">
+        <label for="backend-user-id">Backend user ID</label>
+        <input
+          id="backend-user-id"
+          type="number"
+          [(ngModel)]="backendUserId"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="Read from token when available"
+        />
+        <button
+          type="button"
+          class="context-load-button"
+          (click)="loadDoctorBranchContext(backendUserId)"
+          [disabled]="isContextLoading || !isAuthenticated"
+        >
+          Load branches
+        </button>
+      </div>
+
+      <div class="doctor-branch-grid">
+        <label class="doctor-branch-field">
+          <span>Branch</span>
+          <select
+            [ngModel]="selectedBranchId"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="onBranchChange($event)"
+            [disabled]="isContextLoading || hospitalBranches.length === 0"
+          >
+            <option [ngValue]="null">Select a branch</option>
+            <option *ngFor="let branch of hospitalBranches" [ngValue]="branch.hospitalBranchId">
+              {{ branchName(branch) }}
+            </option>
+          </select>
+        </label>
+
+        <label class="doctor-branch-field">
+          <span>Doctor</span>
+          <select
+            [ngModel]="selectedDoctorId"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="onDoctorChange($event)"
+            [disabled]="isContextLoading || doctors.length === 0"
+          >
+            <option [ngValue]="null">Select a doctor</option>
+            <option *ngFor="let doctor of doctors" [ngValue]="doctor.doctorId">
+              {{ doctorName(doctor) }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <div class="doctor-branch-doctors" *ngIf="doctors.length > 0">
+        <button
+          type="button"
+          *ngFor="let doctor of doctors"
+          class="doctor-choice"
+          [class.selected]="doctor.doctorId === selectedDoctorId"
+          [attr.aria-pressed]="doctor.doctorId === selectedDoctorId"
+          (click)="onDoctorChange(doctor.doctorId)"
+        >
+          {{ doctorName(doctor) }}
+        </button>
+      </div>
+
+      <div class="context-status" *ngIf="contextLoaded || selectedBranch || selectedDoctor">
+        <span class="context-status__label">Current selection</span>
+        <strong>
+          {{ selectedDoctor ? doctorName(selectedDoctor) : 'Doctor not selected' }}
+          <span *ngIf="selectedBranch"> · {{ branchName(selectedBranch) }}</span>
+        </strong>
+      </div>
+
+      <p class="doctor-branch-error" *ngIf="contextError" role="alert">{{ contextError }}</p>
+      <p class="doctor-branch-success" *ngIf="contextNotice" role="status">{{ contextNotice }}</p>
+
+      <button
+        type="button"
+        class="context-apply-button"
+        (click)="applyDoctorBranchSwap()"
+        [disabled]="isContextLoading || !selectedBranch || !selectedDoctor"
+      >
+        Apply doctor / branch selection
+      </button>
+    </section>
   </div>
 </div>
 

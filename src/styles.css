@@ -1,1 +1,34 @@
 /* You can add global styles to this file, and also import other style files */
+/* Keep the new context controls global so App's component-style budget remains intact. */
+.doctor-branch-card { margin-top: 22px; border: 1px solid #d7e3ff; border-radius: 16px; background: #fbfdff; padding: 18px; }
+.doctor-branch-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.doctor-branch-card__header h2 { margin: 3px 0 0; color: #22304a; font-size: 18px; }
+.doctor-branch-help { margin: 10px 0 16px; color: #5d6c85; font-size: 13px; line-height: 1.45; }
+.context-refresh-button, .context-load-button, .context-apply-button { border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700; transition: transform .2s ease, opacity .2s ease; }
+.context-refresh-button:hover:not(:disabled), .context-load-button:hover:not(:disabled), .context-apply-button:hover:not(:disabled) { transform: translateY(-1px); }
+.context-refresh-button:disabled, .context-load-button:disabled, .context-apply-button:disabled { cursor: not-allowed; opacity: .55; }
+.context-refresh-button { padding: 8px 11px; background: #edf3ff; color: #45649b; }
+.context-user-id-row { display: grid; grid-template-columns: auto minmax(130px, 1fr) auto; align-items: center; gap: 8px; margin-bottom: 16px; }
+.context-user-id-row label { color: #52627d; font-size: 12px; font-weight: 700; }
+.context-user-id-row input, .doctor-branch-field select { width: 100%; border: 1px solid #cbd8ef; border-radius: 9px; background: #fff; color: #22304a; font: inherit; outline: none; }
+.context-user-id-row input { min-width: 0; padding: 9px 10px; }
+.context-user-id-row input:focus, .doctor-branch-field select:focus { border-color: #7299ed; box-shadow: 0 0 0 3px rgba(114, 153, 237, .14); }
+.context-load-button { padding: 9px 12px; background: #eef4ff; color: #466cae; }
+.doctor-branch-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.doctor-branch-field { display: flex; flex-direction: column; gap: 7px; }
+.doctor-branch-field span { color: #52627d; font-size: 12px; font-weight: 700; }
+.doctor-branch-field select { padding: 10px; }
+.doctor-branch-doctors { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+.doctor-choice { border: 1px solid #cbd8ef; border-radius: 9px; background: #fff; color: #405375; cursor: pointer; padding: 8px 10px; font-size: 12px; font-weight: 700; }
+.doctor-choice:hover, .doctor-choice.selected { border-color: #668fe7; background: #eaf1ff; color: #315b9f; }
+.context-status { display: flex; flex-direction: column; gap: 4px; margin-top: 15px; border-radius: 10px; background: #f0f6ff; padding: 10px 12px; color: #274678; font-size: 13px; }
+.context-status__label { color: #6680ad; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.doctor-branch-error, .doctor-branch-success { margin: 12px 0 0; border-radius: 9px; padding: 9px 10px; font-size: 12px; }
+.doctor-branch-error { background: #fff0f0; color: #a63d3d; }
+.doctor-branch-success { background: #eefbf2; color: #267044; }
+.context-apply-button { width: 100%; margin-top: 14px; padding: 11px 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+
+@media (max-width: 768px) {
+  .context-user-id-row, .doctor-branch-grid { grid-template-columns: 1fr; }
+  .context-user-id-row label { margin-bottom: -3px; }
+}

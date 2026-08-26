@@ -1,13 +1,14 @@
 <div class="login-container">
   <div class="login-card">
     <div class="login-header-row">
-      <h1>Login</h1>
+      <h1 *ngIf="!isAuthenticated">Login</h1>
+      <h1 *ngIf="isAuthenticated">Authenticated</h1>
       <button type="button" class="patient-search-button" (click)="openPatientSearchDialog()">
         Search Patient
       </button>
     </div>
 
-    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+    <form *ngIf="!isAuthenticated" (ngSubmit)="onLogin()" #loginForm="ngForm">
       <div class="form-group">
         <label for="token">Authentication Token</label>
         <input

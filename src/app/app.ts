@@ -51,6 +51,16 @@ const IFRAME_MESSAGE_REQUEST_PATIENT_SELECTION = 'REQUEST_PATIENT_SELECTION';
 const IFRAME_MESSAGE_DOCTOR_BRANCH_SELECTION = 'DOCTOR_BRANCH_SELECTION';
 const IFRAME_MESSAGE_REQUEST_DOCTOR_BRANCH_SELECTION = 'REQUEST_DOCTOR_BRANCH_SELECTION';
 const IFRAME_AUTH_MESSAGE = 'AUTH_TOKEN';
+const IFRAME_MESSAGE_REQUEST_AUTH_TOKEN = 'REQUEST_AUTH_TOKEN';
+const TRUSTED_IFRAME_PARENT_ORIGINS = new Set([
+  'https://dr.mypracteaz.com',
+  'https://app.mypracteaz.com',
+  'https://testpracteaz.azurewebsites.net',
+  'https://dev.vatsalyacare.ai',
+  'https://vatsalyacare.ai',
+  'http://localhost:4200',
+  'http://localhost:3000'
+]);
 const SELECTED_HOSPITAL_KEY = 'SelectedHospital';
 const HOSPITAL_ID_KEY = 'hospitalId';
 const HOSPITAL_BRANCH_GUID_KEY = 'sSelectedHospitalBranchGuid';
@@ -288,17 +298,26 @@ export class App implements OnInit {
   private contextRequestId = 0;
 
   ngOnInit(): void {
-    this.updateIframeUrls();
     if (this.isBrowser()) {
       this.setupMessageListener();
     }
 
-    const storedToken = this.environmentService.getToken();
-    if (storedToken) {
-      this.token = storedToken;
-      this.isAuthenticated = true;
-      void this.loadDoctorBranchContext();
+    const urlToken = this.readTokenFromUrl();
+    if (urlToken) {
+      this.acceptAuthenticationToken(urlToken, true);
+    } else {
+      const storedToken = this.environmentService.getToken();
+      if (storedToken) {
+        this.token = storedToken;
+        this.isAuthenticated = true;
+        this.updateIframeUrls();
+        void this.loadDoctorBranchContext();
+      } else {
+        this.updateIframeUrls();
+      }
     }
+
+    this.requestAuthenticationTokenFromParent();
   }
 
   setupMessageListener(): void {
@@ -308,6 +327,26 @@ export class App implements OnInit {
 
     window.addEventListener('message', (event) => {
       if (!event.data || typeof event.data !== 'object') return;
+
+      if (
+        event.data.type === IFRAME_MESSAGE_REQUEST_AUTH_TOKEN &&
+        (this.isMessageFromIframe(event, 'patient') || this.isMessageFromIframe(event, 'staff'))
+      ) {
+        this.replyWithAuthenticationToken(event.source, event.origin);
+        return;
+      }
+
+      if (event.data.type === IFRAME_AUTH_MESSAGE) {
+        if (!this.isTrustedParentMessage(event)) {
+          return;
+        }
+
+        const incomingToken = typeof event.data.token === 'string' ? event.data.token.trim() : '';
+        if (incomingToken) {
+          this.ngZone.run(() => this.acceptAuthenticationToken(incomingToken, false));
+        }
+        return;
+      }
 
       if (event.data.type === 'CLOSE_PATIENT_IFRAME') {
         this.ngZone.run(() => {
@@ -375,6 +414,79 @@ export class App implements OnInit {
     this.staffIframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(staffUrl);
   }
 
+  private acceptAuthenticationToken(token: string, fromUrl: boolean): void {
+    const normalizedToken = token.trim();
+    if (!normalizedToken) {
+      return;
+    }
+
+    const previousToken = this.environmentService.getToken();
+    if (previousToken && previousToken !== normalizedToken) {
+      this.clearDoctorBranchContext();
+    }
+
+    this.environmentService.setToken(normalizedToken);
+    this.token = normalizedToken;
+    this.isAuthenticated = true;
+    this.updateIframeUrls();
+
+    if (fromUrl) {
+      this.removeTokenFromUrl();
+    }
+
+    void this.loadDoctorBranchContext();
+  }
+
+  private readTokenFromUrl(): string | null {
+    if (!this.isBrowser()) {
+      return null;
+    }
+
+    return new URLSearchParams(window.location.search).get('token')?.trim() || null;
+  }
+
+  private removeTokenFromUrl(): void {
+    if (!this.isBrowser() || !window.history.replaceState) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('token');
+    window.history.replaceState(window.history.state, document.title, `${url.pathname}${url.search}${url.hash}`);
+  }
+
+  private requestAuthenticationTokenFromParent(): void {
+    if (!this.isBrowser() || window.parent === window) {
+      return;
+    }
+
+    const referrerOrigin = this.getReferrerOrigin();
+    window.parent.postMessage(
+      { type: IFRAME_MESSAGE_REQUEST_AUTH_TOKEN },
+      referrerOrigin || '*'
+    );
+  }
+
+  private isTrustedParentMessage(event: MessageEvent): boolean {
+    if (!this.isBrowser() || event.source !== window.parent) {
+      return false;
+    }
+
+    return TRUSTED_IFRAME_PARENT_ORIGINS.has(event.origin) || event.origin === this.getReferrerOrigin();
+  }
+
+  private getReferrerOrigin(): string {
+    if (!this.isBrowser() || !document.referrer) {
+      return '';
+    }
+
+    try {
+      return new URL(document.referrer).origin;
+    } catch {
+      return '';
+    }
+  }
+
   togglePatientIframe(): void {
     this.showPatientIframe = !this.showPatientIframe;
 
@@ -432,6 +544,7 @@ export class App implements OnInit {
 
     this.environmentService.setToken(trimmedToken);
     this.isAuthenticated = true;
+    this.token = trimmedToken;
     this.updateIframeUrls();
     this.token = '';
     this.contextNotice = '';
@@ -744,12 +857,30 @@ export class App implements OnInit {
   }
 
   private isMessageFromStaffIframe(event: MessageEvent): boolean {
-    if (event.origin !== this.getIframeTargetOrigin('staff')) {
+    return this.isMessageFromIframe(event, 'staff');
+  }
+
+  private isMessageFromIframe(event: MessageEvent, type: 'patient' | 'staff'): boolean {
+    if (event.origin !== this.getIframeTargetOrigin(type)) {
       return false;
     }
 
-    const iframe = this.getIframeElement('staff');
+    const iframe = this.getIframeElement(type);
     return Boolean(iframe?.contentWindow && iframe.contentWindow === event.source);
+  }
+
+  private replyWithAuthenticationToken(source: MessageEventSource | null, origin: string): void {
+    const token = this.environmentService.getToken();
+    if (!token || !source || typeof source === 'function') {
+      return;
+    }
+
+    try {
+      (source as WindowProxy).postMessage({ type: IFRAME_AUTH_MESSAGE, token }, origin);
+    } catch {
+      // The iframe may have navigated between requesting and receiving the reply.
+      // The normal load/timeout delivery will send the token again when it settles.
+    }
   }
 
   openPatientSearchDialog(): void {

@@ -4,14 +4,22 @@ import { App } from './app';
 import { EnvironmentService } from './environment.service';
 
 class MockEnvironmentService {
+  private token: string | null = null;
+
   getToken(): string | null {
-    return null;
+    return this.token;
   }
 
-  setToken(): void {}
-  removeToken(): void {}
+  setToken(token: string): void {
+    this.token = token;
+  }
+
+  removeToken(): void {
+    this.token = null;
+  }
+
   hasToken(): boolean {
-    return false;
+    return !!this.token;
   }
 }
 
@@ -37,5 +45,23 @@ describe('App', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Login');
+  });
+
+  it('should accept an authentication message from the trusted parent window', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    const environmentService = TestBed.inject(EnvironmentService) as unknown as MockEnvironmentService;
+    fixture.detectChanges();
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'AUTH_TOKEN', token: 'token-from-parent' },
+        origin: 'http://localhost:4200',
+        source: window
+      })
+    );
+
+    expect(app.isAuthenticated).toBeTrue();
+    expect(environmentService.getToken()).toBe('token-from-parent');
   });
 });
